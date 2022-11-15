@@ -1,0 +1,33 @@
+[package]
+name = "sleep-progress-fuzz"
+version = "0.0.0"
+authors = ["Automatically generated"]
+publish = false
+edition = "2018"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+clap = { version = "4.0.22", features = ["derive"] }
+
+[dependencies.sleep-progress]
+path = ".."
+features = ["arbitrary"]
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "arg_parse_command"
+path = "fuzz_targets/arg_parse_command.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "parse_interval"
+path = "fuzz_targets/parse_interval.rs"
+test = false
+doc = false
