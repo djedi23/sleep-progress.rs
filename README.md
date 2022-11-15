@@ -8,6 +8,7 @@ The arguments are compatible with the original sleep but you can add `--progress
 
 It can be use as a replacement for GNU sleep: `alias sleep=sleep-progress` .
 
+WARNING: the deplayed ETA may not be as accurate as the sleep delay.
 
 ```
 Usage: sleep-progress [OPTIONS] <NUMBER>...
@@ -24,3 +25,23 @@ Options:
   -V, --version   Print version information
 ```
 
+## Installation
+
+
+### From cargo
+
+Ensure Rust is installed: https://www.rust-lang.org/tools/install
+
+``` bash
+cargo install sleep-progress
+```
+
+### From source
+
+Ensure Rust is installed: https://www.rust-lang.org/tools/install
+
+``` bash
+git clone https://github.com/djedi23/sleep-progress.rs.git
+cd sleep-progress.rs
+cargo install --path .
+```
