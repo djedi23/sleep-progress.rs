@@ -8,7 +8,7 @@ The arguments are compatible with the original sleep but you can add `--progress
 
 It can be use as a replacement for GNU sleep: `alias sleep=sleep-progress` .
 
-WARNING: the deplayed ETA may not be as accurate as the sleep delay.
+WARNING: the displayed ETA may not be as accurate as the sleep delay.
 
 ```
 Usage: sleep-progress [OPTIONS] <NUMBER>...
@@ -27,6 +27,10 @@ Options:
 
 ## Installation
 
+### Binaries
+
+Download the binary for your architecture from
+https://github.com/djedi23/sleep-progress.rs/releases
 
 ### From cargo
 

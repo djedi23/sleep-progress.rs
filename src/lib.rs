@@ -1,3 +1,49 @@
+//! `sleep-progress` is a clone of GNU sleep with an optional progress bar.
+//!
+//! The arguments are compatible with the original sleep but you can add `--progress` or `-p` to display a progress bar with an ETA.
+//!
+//! It can be use as a replacement for GNU sleep: `alias sleep=sleep-progress` .
+//!
+//! WARNING: the displayed ETA may not be as accurate as the sleep delay.
+//!
+//! ```text
+//! Usage: sleep-progress [OPTIONS] <NUMBER>...
+//!
+//! Arguments:
+//!   <NUMBER>...  Pause  for  NUMBER seconds.
+//!                SUFFIX may be 's' for seconds (the default), 'm' for minutes, 'h' for hours or 'd' for days.
+//!                NUMBER need not be an integer.
+//!                Given two or more arguments, pause for the amount of time specified by the sum of their values
+//!
+//! Options:
+//!   -p, --progress  Display the sleep indicator
+//!   -h, --help      Print help information
+//!   -V, --version   Print version information
+//! ```
+//!
+//! ## Installation
+//!
+//! ### Binaries
+//!
+//! Download the binary for your architecture from
+//! <https://github.com/djedi23/sleep-progress.rs/releases>
+//!
+//! ### From cargo
+//!
+//! Run:
+//! ``` bash
+//! cargo install sleep-progress
+//! ```
+//!
+//! ### From source
+//!
+//! Run:
+//! ``` bash
+//! git clone https://github.com/djedi23/sleep-progress.rs.git
+//! cd sleep-progress.rs
+//! cargo install --path .
+//! ```
+
 use clap::Parser;
 use miette::{Diagnostic, Result};
 use thiserror::Error;
@@ -8,13 +54,14 @@ use thiserror::Error;
   code(invalid::time),
   help("Try `sleep-progress --help` for more informations.")
 )]
-pub struct InvalidTimeInterval {
+pub(crate) struct InvalidTimeInterval {
   origin: String,
 }
 
 #[derive(Parser, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[command(author, version, about, long_about = None)]
+#[doc(hidden)]
 pub struct Args {
   /// Pause  for  NUMBER seconds.  SUFFIX may be 's' for seconds (the default), 'm' for minutes, 'h' for hours or 'd' for days.  NUMBER need not be an integer.  Given two or more arguments, pause for the amount of time specified by the sum of their values.
   #[arg(required = true)]
@@ -25,6 +72,7 @@ pub struct Args {
   pub progress: bool,
 }
 
+#[doc(hidden)]
 pub fn parse_interval(args: &Args) -> Result<u64> {
   let mut sum = 0.0;
   for duration_spec in args.number.iter() {
