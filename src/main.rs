@@ -1,6 +1,6 @@
 use clap::Parser;
 use indicatif::{ProgressBar, ProgressStyle};
-use miette::Result;
+use miette::{IntoDiagnostic, Result};
 use sleep_progress::{parse_interval, Args};
 use std::{sync::Arc, thread, time::Duration};
 
@@ -10,12 +10,14 @@ fn main() -> Result<()> {
 
   if args.progress {
     let pb = Arc::new(ProgressBar::new(interval));
-    pb.set_style(ProgressStyle::with_template("{wide_bar} [{eta_precise}]").unwrap());
+    pb.set_style(ProgressStyle::with_template("{wide_bar} [{eta_precise}]").into_diagnostic()?);
     let pbb = pb.clone();
 
-    thread::spawn(move || loop {
-      thread::sleep(Duration::from_millis(500));
-      pbb.set_position(pbb.elapsed().as_millis().try_into().unwrap());
+    thread::spawn(move || -> Result<()> {
+      loop {
+        thread::sleep(Duration::from_millis(500));
+        pbb.set_position(pbb.elapsed().as_millis().try_into().into_diagnostic()?);
+      }
     });
     thread::sleep(Duration::from_millis(interval));
     pb.finish_and_clear();
