@@ -4,7 +4,7 @@ version = "0.1.2"
 edition = "2021"
 authors= ["Valvassori Moïse <moise.valvassori@gmail.com>"]
 description= "delay for a specified amount of time"
-license-file = "LICENSE"
+license = "MIT"
 homepage = "https://github.com/djedi23/sleep-progress.rs"
 repository = "https://github.com/djedi23/sleep-progress.rs"
 
@@ -14,11 +14,9 @@ repository = "https://github.com/djedi23/sleep-progress.rs"
 [dependencies]
 clap = { version = "4.0.22", features = ["derive"] }
 indicatif = "0.17.2"
-tokio = { version = "1.21.2", features = ["rt","rt-multi-thread", "sync", "time", "macros"] }
-
-arbitrary = { version = "1", optional = true, features = ["derive"] }
 miette = { version = "5.4.1", features = ["fancy-no-backtrace"] }
 thiserror = "1.0.37"
+arbitrary = { version = "1", optional = true, features = ["derive"] }
 
 
 [profile.release]

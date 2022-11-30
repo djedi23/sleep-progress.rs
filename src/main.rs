@@ -2,36 +2,26 @@ use clap::Parser;
 use indicatif::{ProgressBar, ProgressStyle};
 use miette::Result;
 use sleep_progress::{parse_interval, Args};
-use std::sync::Arc;
-use tokio::{
-  self,
-  time::{sleep, Duration},
-};
+use std::{sync::Arc, thread, time::Duration};
 
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() -> Result<()> {
   let args: Args = Args::parse();
   let interval: u64 = parse_interval(&args)?;
 
-  let sleep_task = tokio::spawn(async move {
-    sleep(Duration::from_millis(interval)).await;
-  });
-
   if args.progress {
-    let pb = Arc::new(ProgressBar::new(interval / 1000));
+    let pb = Arc::new(ProgressBar::new(interval));
     pb.set_style(ProgressStyle::with_template("{wide_bar} [{eta_precise}]").unwrap());
     let pbb = pb.clone();
 
-    tokio::spawn(async move {
-      for _i in 0..(interval / 1000) {
-        sleep(Duration::from_millis(1000)).await;
-        pbb.inc(1);
-      }
+    thread::spawn(move || loop {
+      thread::sleep(Duration::from_millis(500));
+      pbb.set_position(pbb.elapsed().as_millis().try_into().unwrap());
     });
-    sleep_task.await.unwrap();
+    thread::sleep(Duration::from_millis(interval));
     pb.finish_and_clear();
   } else {
-    sleep_task.await.unwrap();
+    thread::sleep(Duration::from_millis(interval));
   }
+
   Ok(())
 }
