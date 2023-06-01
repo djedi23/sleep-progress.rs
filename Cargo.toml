@@ -1,6 +1,6 @@
 [package]
 name = "sleep-progress"
-version = "0.1.3"
+version = "0.2.0"
 edition = "2021"
 authors= ["Valvassori Moïse <moise.valvassori@gmail.com>"]
 description= "delay for a specified amount of time"
@@ -17,6 +17,8 @@ indicatif = "0.17.2"
 miette = { version = "5.4.1", features = ["fancy-no-backtrace"] }
 thiserror = "1.0.37"
 arbitrary = { version = "1", optional = true, features = ["derive"] }
+dateparser = "0.2.0"
+chrono = { version = "0.4.26" }
 
 
 [profile.release]

@@ -44,8 +44,10 @@
 //! cargo install --path .
 //! ```
 
+use chrono::Utc;
 use clap::Parser;
-use miette::{Diagnostic, Result};
+use dateparser::DateTimeUtc;
+use miette::{miette, Diagnostic, Result};
 use thiserror::Error;
 
 #[derive(Error, Debug, Diagnostic)]
@@ -58,14 +60,18 @@ pub(crate) struct InvalidTimeInterval {
   origin: String,
 }
 
-#[derive(Parser, Debug, PartialEq, Eq)]
+#[derive(Parser, Debug)]
 #[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[command(author, version, about, long_about = None)]
 #[doc(hidden)]
 pub struct Args {
   /// Pause  for  NUMBER seconds.  SUFFIX may be 's' for seconds (the default), 'm' for minutes, 'h' for hours or 'd' for days.  NUMBER need not be an integer.  Given two or more arguments, pause for the amount of time specified by the sum of their values.
-  #[arg(required = true)]
+  #[arg(required_unless_present("timespec"))]
   number: Vec<String>,
+
+  /// Sleep until this timestamp.
+  #[arg(short('u'), long("until"), conflicts_with("number"))]
+  pub timespec: Option<DateTimeUtc>,
 
   /// Display the sleep indicator
   #[arg(short, long)]
@@ -74,25 +80,40 @@ pub struct Args {
 
 #[doc(hidden)]
 pub fn parse_interval(args: &Args) -> Result<u64> {
-  let mut sum = 0.0;
-  for duration_spec in args.number.iter() {
-    let (value, multipliers) = if let Some(seconds) = duration_spec.strip_suffix('s') {
-      (seconds, 1000.0)
-    } else if let Some(minutes) = duration_spec.strip_suffix('m') {
-      (minutes, 60.0 * 1000.0)
-    } else if let Some(hours) = duration_spec.strip_suffix('h') {
-      (hours, 60.0 * 60.0 * 1000.0)
-    } else if let Some(days) = duration_spec.strip_suffix('d') {
-      (days, 24.0 * 60.0 * 60.0 * 1000.0)
-    } else {
-      (duration_spec.as_str(), 1000.0)
-    };
-    sum += multipliers
-      * value.parse::<f64>().map_err(|_| InvalidTimeInterval {
-        origin: duration_spec.to_string(),
-      })?
+  match &args.timespec {
+    Some(timespec) => {
+      let millis = (timespec.0 - Utc::now()).num_milliseconds();
+      if millis < 0 {
+        Err(miette!(
+          "Can't wait a past time: {}",
+          timespec.0.to_rfc2822()
+        ))
+      } else {
+        Ok(millis as u64)
+      }
+    }
+    None => {
+      let mut sum = 0.0;
+      for duration_spec in args.number.iter() {
+        let (value, multipliers) = if let Some(seconds) = duration_spec.strip_suffix('s') {
+          (seconds, 1000.0)
+        } else if let Some(minutes) = duration_spec.strip_suffix('m') {
+          (minutes, 60.0 * 1000.0)
+        } else if let Some(hours) = duration_spec.strip_suffix('h') {
+          (hours, 60.0 * 60.0 * 1000.0)
+        } else if let Some(days) = duration_spec.strip_suffix('d') {
+          (days, 24.0 * 60.0 * 60.0 * 1000.0)
+        } else {
+          (duration_spec.as_str(), 1000.0)
+        };
+        sum += multipliers
+          * value.parse::<f64>().map_err(|_| InvalidTimeInterval {
+            origin: duration_spec.to_string(),
+          })?
+      }
+      Ok(sum.round() as u64)
+    }
   }
-  Ok(sum.round() as u64)
 }
 
 #[cfg(test)]
@@ -176,6 +197,7 @@ mod tests {
   fn parse_interval_1() {
     let result = parse_interval(&Args {
       number: vec!["1".into()],
+      timespec: None,
       progress: false,
     });
     assert_eq!(result.ok(), Some(1000));
@@ -185,6 +207,7 @@ mod tests {
   fn parse_interval_1p() {
     let result = parse_interval(&Args {
       number: vec!["1".into()],
+      timespec: None,
       progress: true,
     });
     assert_eq!(result.ok(), Some(1000));
@@ -194,6 +217,7 @@ mod tests {
   fn parse_interval_0_5() {
     let result = parse_interval(&Args {
       number: vec!["0.5".into()],
+      timespec: None,
       progress: false,
     });
     assert_eq!(result.ok(), Some(500));
@@ -203,6 +227,7 @@ mod tests {
   fn parse_interval_1s() {
     let result = parse_interval(&Args {
       number: vec!["1s".into()],
+      timespec: None,
       progress: false,
     });
     assert_eq!(result.ok(), Some(1000));
@@ -212,6 +237,7 @@ mod tests {
   fn parse_interval_1m() {
     let result = parse_interval(&Args {
       number: vec!["1m".into()],
+      timespec: None,
       progress: false,
     });
     assert_eq!(result.ok(), Some(60000));
@@ -221,6 +247,7 @@ mod tests {
   fn parse_interval_1h() {
     let result = parse_interval(&Args {
       number: vec!["1h".into()],
+      timespec: None,
       progress: false,
     });
     assert_eq!(result.ok(), Some(3600000));
@@ -230,6 +257,7 @@ mod tests {
   fn parse_interval_1d() {
     let result = parse_interval(&Args {
       number: vec!["1d".into()],
+      timespec: None,
       progress: false,
     });
     assert_eq!(result.ok(), Some(86400000));
@@ -245,6 +273,7 @@ mod tests {
         "1h".into(),
         "1d".into(),
       ],
+      timespec: None,
       progress: false,
     });
     assert_eq!(result.ok(), Some(90062023));
@@ -254,6 +283,7 @@ mod tests {
   fn parse_interval_err() {
     let result = parse_interval(&Args {
       number: vec!["1z".into()],
+      timespec: None,
       progress: false,
     });
 
@@ -274,6 +304,7 @@ mod tests {
         "5".into(),
         "6".into(),
       ],
+      timespec: None,
       progress: false,
     });
 
@@ -287,6 +318,7 @@ mod tests {
   fn parse_interval_err_3() {
     let result = parse_interval(&Args {
       number: vec!["one".into()],
+      timespec: None,
       progress: false,
     });
 
